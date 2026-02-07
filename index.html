@@ -456,62 +456,50 @@
             }
         }
 
-        async function launchGame(title, url) {
+async function launchGame(title, url) {
             document.getElementById('activeGameTitle').innerText = title;
             document.getElementById('loadingContainer').style.display = 'block';
             document.getElementById('game-overlay').style.display = 'block';
             
             const gameFrame = document.getElementById('gameFrame');
             
+            // Check for jsDelivr links
             const isJsDelivrHtml = url.includes('cdn.jsdelivr.net') && 
                                   (url.includes('.html') || url.endsWith('.htm') || 
                                    url.includes('games/'));
             
+            // This is the critical fix for school laptops:
+            // It tells the browser to allow the game to run scripts and use memory
+            gameFrame.setAttribute("allow", "autoplay; fullscreen; keyboard-map; focus-without-user-activation; pointer-lock");
+            gameFrame.setAttribute("sandbox", "allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-scripts allow-same-origin");
+
             setTimeout(function() {
                 if (isJsDelivrHtml) {
-                    fetch(url)
-                        .then(function(response) {
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            return response.text();
-                        })
-                        .then(function(html) {
-                            gameFrame.srcdoc = html;
-                            document.getElementById('loadingContainer').style.display = 'none';
-                        })
-                        .catch(function(error) {
-                            console.log('Fetch failed, using iframe wrapper:', error);
-                            createIframeWrapper(url);
-                            document.getElementById('loadingContainer').style.display = 'none';
-                        });
+                    // We remove the 'fetch' logic because school filters block it.
+                    // Instead, we load the URL directly into the frame.
+                    gameFrame.srcdoc = ""; 
+                    gameFrame.src = url;
+                    
+                    gameFrame.onload = function() {
+                        document.getElementById('loadingContainer').style.display = 'none';
+                        addLog("Simulation " + title + " started via Egg-Net Bypass.");
+                    };
                 } else {
-                    createIframeWrapper(url);
-                    document.getElementById('loadingContainer').style.display = 'none';
+                    // Fallback for other links
+                    gameFrame.src = url;
+                    gameFrame.onload = function() {
+                        document.getElementById('loadingContainer').style.display = 'none';
+                        addLog("Simulation " + title + " started.");
+                    };
                 }
-            }, 1500);
+            }, 1500); // Keeps your 1.5 second loading delay
             
             addLog("Simulation Initialized: " + title);
         }
 
+        // Keep this as a placeholder to prevent errors
         function createIframeWrapper(url) {
-            const wrapper = '<!DOCTYPE html>' +
-                '<html>' +
-                '<head>' +
-                '<meta charset="UTF-8">' +
-                '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-                '<style>' +
-                'body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }' +
-                'iframe { width: 100%; height: 100%; border: none; }' +
-                '</style>' +
-                '</head>' +
-                '<body>' +
-                '<iframe src="' + url + '" frameborder="0" allowfullscreen allow="autoplay; fullscreen; pointer-lock"></iframe>' +
-                '</body>' +
-                '</html>';
-
-            const gameFrame = document.getElementById('gameFrame');
-            gameFrame.srcdoc = wrapper;
+            document.getElementById('gameFrame').src = url;
         }
 
         function closeGame() {
@@ -558,4 +546,5 @@
     </script>
 </body>
 </html>
+
 
