@@ -434,17 +434,12 @@
         function loadGames() {
             const grid = document.getElementById('cardGrid');
             grid.innerHTML = games.map(g => `
-                <div class="card">
+                <div class="card" onclick="window.open('${g.url}', '_blank'); addLog('Launched: ${g.title}');">
                     <img src="${g.image}" alt="${g.title}" onerror="this.src='https://via.placeholder.com/260x140/1a1a1a/c27c15?text=No+Image'">
                     <h3>${g.title}</h3>
                     <p>${g.desc}</p>
-                    <div class="play-options">
-                        <button class="play-btn" onclick="launchGameIframe('${g.title}', '${g.url}'); event.stopPropagation();">
-                            <i class="fas fa-play"></i> Play Here
-                        </button>
-                        <button class="play-btn" onclick="launchGameNewTab('${g.url}'); event.stopPropagation();">
-                            <i class="fas fa-external-link-alt"></i> New Tab
-                        </button>
+                    <div style="margin-top: 10px; color: var(--eggman-red); font-size: 0.85rem;">
+                        <i class="fas fa-play-circle"></i> Click to Play
                     </div>
                 </div>
             `).join('');
