@@ -72,15 +72,34 @@
         #historyLog { height: 200px; overflow-y: auto; font-size: 0.85rem; color: #0f0; }
         textarea { width: 100%; height: 100px; background: #222; border: 1px solid #444; color: white; padding: 10px; margin-bottom: 10px; }
         
-        .loading-msg {
+        .loading-container {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: var(--eggman-gold);
-            font-size: 1.2rem;
             text-align: center;
             z-index: 10;
+        }
+        
+        .loading-msg {
+            color: var(--eggman-gold);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #333;
+            border-top: 4px solid var(--eggman-red);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -96,7 +115,7 @@
         <div class="top-nav">
             <div class="search-container">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchBar" onkeyup="filterCards()" placeholder="Search through 263 simulations...">
+                <input type="text" id="searchBar" onkeyup="filterCards()" placeholder="Search through 264 simulations...">
             </div>
             <button class="btn" onclick="location.reload()">Logout</button>
         </div>
@@ -109,7 +128,7 @@
         </div>
 
         <div id="historyTab" class="tab-content active">
-            <div id="historyLog">> System Online. 263 Simulations imported from Master Plan.</div>
+            <div id="historyLog">> System Online. 264 Simulations imported from Master Plan. Pizza Tower added.</div>
         </div>
 
         <div id="reviewTab" class="tab-content">
@@ -123,13 +142,17 @@
             <span id="activeGameTitle" style="color:var(--eggman-gold);"></span>
             <button class="btn" onclick="closeGame()">Exit Sim</button>
         </div>
-        <div class="loading-msg" id="loadingMsg">Loading simulation...</div>
-        <iframe id="gameFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups"></iframe>
+        <div class="loading-container" id="loadingContainer">
+            <div class="spinner"></div>
+            <div class="loading-msg" id="loadingMsg">Loading simulation...</div>
+        </div>
+        <iframe id="gameFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-modals allow-top-navigation"></iframe>
     </div>
 
     <script>
-        // DATA IMPORTED FROM MASTER PLAN
+        // DATA IMPORTED FROM MASTER PLAN + PIZZA TOWER
         const games = [
+            { title: "Pizza Tower", desc: "Fast-paced platformer where you play as Peppino Spaghetti running through a tower", url: "https://www.autistici.org/burnedprojects/NoiseUpdate/", image: "https://cdn.shopify.com/s/files/1/0014/1962/t/56/assets/logo-raster-pizza-tower.png?v=37199225825302511201634945846" },
             { title: "Half Life: Opposing Force", desc: "The first official expansion for Valves groundbreaking Half-Life", url: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor@master/games/269.html", image: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor/images/296.jpg" },
             { title: "A Difficult Game About Climbing", desc: "A physics-based platformer where you control a climber\'s hands to ascend a treacherous mountain", url: "https://rawcdn.githack.com/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor/7baa13af05284d94b79910812194c14292b74ec8/games/172.html", image: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor/images/294.jpg" },
             { title: "Stick War Legacy", desc: "A popular mobile strategy game where you lead armies of stick figures, managing resources like gold to build units", url: "https://rawcdn.githack.com/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor/master/games/171.html", image: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor/images/293.jpg" },
@@ -425,7 +448,7 @@
 
         async function launchGame(title, url) {
             document.getElementById('activeGameTitle').innerText = title;
-            document.getElementById('loadingMsg').style.display = 'block';
+            document.getElementById('loadingContainer').style.display = 'block';
             document.getElementById('game-overlay').style.display = 'block';
             
             const iframe = document.getElementById('gameFrame');
@@ -438,18 +461,20 @@
                 // Use srcdoc to inject the content directly
                 iframe.srcdoc = htmlContent;
                 
-                // Hide loading message after a delay
+                // Hide loading after 3 seconds
                 setTimeout(() => {
-                    document.getElementById('loadingMsg').style.display = 'none';
-                }, 2000);
+                    document.getElementById('loadingContainer').style.display = 'none';
+                }, 3000);
                 
                 addLog("Simulation Initialized: " + title);
             } catch (error) {
-                // Fallback to regular src if fetch fails
+                // Fallback to regular iframe src
                 iframe.src = url;
+                
                 setTimeout(() => {
-                    document.getElementById('loadingMsg').style.display = 'none';
-                }, 2000);
+                    document.getElementById('loadingContainer').style.display = 'none';
+                }, 3000);
+                
                 addLog("Simulation Initialized: " + title);
             }
         }
