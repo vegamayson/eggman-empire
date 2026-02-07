@@ -17,7 +17,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; }
         body { background-color: var(--dark-bg); color: #ffffff; min-height: 100vh; }
 
-        /* --- LOGIN --- */
         #login-section { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .logo { font-size: 3rem; font-weight: 900; color: var(--eggman-red); text-transform: uppercase; margin-bottom: 20px; }
         input[type="password"] {
@@ -25,7 +24,6 @@
             padding: 15px; width: 300px; border-radius: 5px; text-align: center; outline: none;
         }
 
-        /* --- HUB GUI --- */
         #game-hub { display: none; padding: 40px 20px; max-width: 1200px; margin: auto; }
         .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; }
         .search-container { position: relative; flex: 1; }
@@ -50,7 +48,6 @@
         .card h3 { font-size: 1rem; margin-bottom: 8px; color: var(--eggman-gold); }
         .card p { color: #888; font-size: 0.8rem; line-height: 1.3; height: 35px; overflow: hidden; }
 
-        /* --- TABS --- */
         .nav-tabs { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
         .nav-tab {
             padding: 12px 25px; background: #222; color: var(--eggman-gold);
@@ -61,7 +58,6 @@
         .tab-content { background: #111; padding: 25px; border-radius: 8px; border: 1px solid #222; display: none; }
         .tab-content.active { display: block; }
 
-        /* --- OVERLAY --- */
         #game-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; }
         iframe { width: 100%; height: calc(100% - 60px); border: none; }
         .game-bar { height: 60px; background: #111; display: flex; align-items: center; padding: 0 20px; justify-content: space-between; border-bottom: 1px solid var(--eggman-red); }
@@ -128,7 +124,7 @@
         </div>
 
         <div id="historyTab" class="tab-content active">
-            <div id="historyLog">> System Online. 264 Simulations imported from Master Plan. Pizza Tower added.</div>
+            <div id="historyLog">> System Online. 264 Simulations loaded. Pizza Tower added.</div>
         </div>
 
         <div id="reviewTab" class="tab-content">
@@ -144,13 +140,12 @@
         </div>
         <div class="loading-container" id="loadingContainer">
             <div class="spinner"></div>
-            <div class="loading-msg" id="loadingMsg">Loading simulation...</div>
+            <div class="loading-msg">Initializing simulation...</div>
         </div>
-        <iframe id="gameFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-modals allow-top-navigation"></iframe>
+        <iframe id="gameFrame"></iframe>
     </div>
 
     <script>
-        // DATA IMPORTED FROM MASTER PLAN + PIZZA TOWER
         const games = [
             { title: "Pizza Tower", desc: "Fast-paced platformer where you play as Peppino Spaghetti running through a tower", url: "https://www.autistici.org/burnedprojects/NoiseUpdate/", image: "https://cdn.shopify.com/s/files/1/0014/1962/t/56/assets/logo-raster-pizza-tower.png?v=37199225825302511201634945846" },
             { title: "Half Life: Opposing Force", desc: "The first official expansion for Valves groundbreaking Half-Life", url: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor@master/games/269.html", image: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor/images/296.jpg" },
@@ -420,28 +415,43 @@
 
         function loadGames() {
             const grid = document.getElementById('cardGrid');
-            grid.innerHTML = games.map(g => `
-                <div class="card" onclick="launchGame('${g.title}', '${g.url}')">
-                    <img src="${g.image}" alt="${g.title}" onerror="this.src='https://via.placeholder.com/260x140/1a1a1a/c27c15?text=No+Image'">
-                    <h3>${g.title}</h3>
-                    <p>${g.desc}</p>
-                </div>
-            `).join('');
+            const cards = games.map(function(g) {
+                return '<div class="card" data-title="' + g.title.replace(/'/g, '&#39;') + '" data-url="' + g.url.replace(/'/g, '&#39;') + '">' +
+                    '<img src="' + g.image + '" alt="' + g.title.replace(/"/g, '&quot;') + '" onerror="this.src=\'https://via.placeholder.com/260x140/1a1a1a/c27c15?text=No+Image\'">' +
+                    '<h3>' + g.title + '</h3>' +
+                    '<p>' + g.desc + '</p>' +
+                    '</div>';
+            }).join('');
+            
+            grid.innerHTML = cards;
+            
+            // Add click handlers
+            const cardElements = grid.getElementsByClassName('card');
+            for (let i = 0; i < cardElements.length; i++) {
+                cardElements[i].addEventListener('click', function() {
+                    const title = this.getAttribute('data-title');
+                    const url = this.getAttribute('data-url');
+                    launchGame(title, url);
+                });
+            }
         }
 
         function checkAuth() {
-            if (document.getElementById('passInput').value.toLowerCase() === "master plan") {
+            const input = document.getElementById('passInput').value.toLowerCase();
+            if (input === "master plan") {
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('game-hub').style.display = 'block';
                 loadGames();
-            } else { alert("ACCESS DENIED"); }
+            } else {
+                alert("ACCESS DENIED");
+            }
         }
 
         function filterCards() {
-            let input = document.getElementById('searchBar').value.toLowerCase();
-            let cards = document.getElementsByClassName('card');
+            const input = document.getElementById('searchBar').value.toLowerCase();
+            const cards = document.getElementsByClassName('card');
             for (let i = 0; i < cards.length; i++) {
-                let text = cards[i].innerText.toLowerCase();
+                const text = cards[i].innerText.toLowerCase();
                 cards[i].style.display = text.includes(input) ? "" : "none";
             }
         }
@@ -451,32 +461,57 @@
             document.getElementById('loadingContainer').style.display = 'block';
             document.getElementById('game-overlay').style.display = 'block';
             
-            const iframe = document.getElementById('gameFrame');
+            const gameFrame = document.getElementById('gameFrame');
             
-            try {
-                // Fetch the game HTML content
-                const response = await fetch(url);
-                const htmlContent = await response.text();
-                
-                // Use srcdoc to inject the content directly
-                iframe.srcdoc = htmlContent;
-                
-                // Hide loading after 3 seconds
-                setTimeout(() => {
+            const isJsDelivrHtml = url.includes('cdn.jsdelivr.net') && 
+                                  (url.includes('.html') || url.endsWith('.htm') || 
+                                   url.includes('games/'));
+            
+            setTimeout(function() {
+                if (isJsDelivrHtml) {
+                    fetch(url)
+                        .then(function(response) {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.text();
+                        })
+                        .then(function(html) {
+                            gameFrame.srcdoc = html;
+                            document.getElementById('loadingContainer').style.display = 'none';
+                        })
+                        .catch(function(error) {
+                            console.log('Fetch failed, using iframe wrapper:', error);
+                            createIframeWrapper(url);
+                            document.getElementById('loadingContainer').style.display = 'none';
+                        });
+                } else {
+                    createIframeWrapper(url);
                     document.getElementById('loadingContainer').style.display = 'none';
-                }, 3000);
-                
-                addLog("Simulation Initialized: " + title);
-            } catch (error) {
-                // Fallback to regular iframe src
-                iframe.src = url;
-                
-                setTimeout(() => {
-                    document.getElementById('loadingContainer').style.display = 'none';
-                }, 3000);
-                
-                addLog("Simulation Initialized: " + title);
-            }
+                }
+            }, 1500);
+            
+            addLog("Simulation Initialized: " + title);
+        }
+
+        function createIframeWrapper(url) {
+            const wrapper = '<!DOCTYPE html>' +
+                '<html>' +
+                '<head>' +
+                '<meta charset="UTF-8">' +
+                '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+                '<style>' +
+                'body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }' +
+                'iframe { width: 100%; height: 100%; border: none; }' +
+                '</style>' +
+                '</head>' +
+                '<body>' +
+                '<iframe src="' + url + '" frameborder="0" allowfullscreen allow="autoplay; fullscreen; pointer-lock"></iframe>' +
+                '</body>' +
+                '</html>';
+
+            const gameFrame = document.getElementById('gameFrame');
+            gameFrame.srcdoc = wrapper;
         }
 
         function closeGame() {
@@ -488,29 +523,38 @@
         }
 
         function openTab(evt, tabId) {
-            let contents = document.getElementsByClassName("tab-content");
-            for (let i = 0; i < contents.length; i++) { contents[i].style.display = "none"; }
-            let tabs = document.getElementsByClassName("nav-tab");
-            for (let i = 0; i < tabs.length; i++) { tabs[i].classList.remove("active"); }
+            const contents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < contents.length; i++) {
+                contents[i].style.display = "none";
+            }
+            const tabs = document.getElementsByClassName("nav-tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
             document.getElementById(tabId).style.display = "block";
             evt.currentTarget.classList.add("active");
         }
 
         function addLog(msg) {
             const log = document.getElementById('historyLog');
-            log.innerHTML = `<div>> [${new Date().toLocaleTimeString()}] ${msg}</div>` + log.innerHTML;
+            const time = new Date().toLocaleTimeString();
+            log.innerHTML = '<div>> [' + time + '] ' + msg + '</div>' + log.innerHTML;
         }
 
         function addReview() {
             const txt = document.getElementById('reviewText').value;
-            if(txt.trim()) {
+            if (txt.trim()) {
                 addLog("Review Uploaded: " + txt.substring(0, 20) + "...");
                 document.getElementById('reviewText').value = "";
                 alert("Data transmitted to the Egg-Net.");
             }
         }
 
-        document.getElementById("passInput").addEventListener("keypress", (e) => { if (e.key === "Enter") checkAuth(); });
+        document.getElementById("passInput").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                checkAuth();
+            }
+        });
     </script>
 </body>
 </html>
