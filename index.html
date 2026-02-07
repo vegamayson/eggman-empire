@@ -43,12 +43,48 @@
         .card {
             background: #1e1e1e; border-radius: 12px; padding: 15px;
             border: 1px solid #333; transition: 0.3s; cursor: pointer;
-            text-align: center;
+            text-align: center; position: relative;
         }
         .card:hover { border-color: var(--eggman-red); transform: translateY(-5px); box-shadow: 0 0 15px var(--eggman-red); }
         .card img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444; }
         .card h3 { font-size: 1rem; margin-bottom: 8px; color: var(--eggman-gold); }
         .card p { color: #888; font-size: 0.8rem; line-height: 1.3; height: 35px; overflow: hidden; }
+        
+        .play-options {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid var(--eggman-red);
+            z-index: 100;
+            min-width: 200px;
+        }
+        
+        .card:hover .play-options { display: block; }
+        
+        .play-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: var(--eggman-red);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+        
+        .play-btn:hover {
+            background: #ff0000;
+            box-shadow: 0 0 10px var(--eggman-red);
+        }
 
         /* --- TABS --- */
         .nav-tabs { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
@@ -67,9 +103,20 @@
         .game-bar { height: 60px; background: #111; display: flex; align-items: center; padding: 0 20px; justify-content: space-between; border-bottom: 1px solid var(--eggman-red); }
         
         .btn { background: var(--eggman-red); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        .btn:hover { background: #ff0000; }
         .hidden { display: none; }
         #historyLog { height: 200px; overflow-y: auto; font-size: 0.85rem; color: #0f0; }
         textarea { width: 100%; height: 100px; background: #222; border: 1px solid #444; color: white; padding: 10px; margin-bottom: 10px; }
+        
+        .loading-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--eggman-gold);
+            font-size: 1.2rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -84,7 +131,7 @@
         <div class="top-nav">
             <div class="search-container">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchBar" onkeyup="filterCards()" placeholder="Search through 400+ simulations...">
+                <input type="text" id="searchBar" onkeyup="filterCards()" placeholder="Search through 263 simulations...">
             </div>
             <button class="btn" onclick="location.reload()">Logout</button>
         </div>
@@ -98,7 +145,7 @@
         </div>
 
         <div id="historyTab" class="tab-content active">
-            <div id="historyLog">> System Online. Simulations imported from Master Plan.</div>
+            <div id="historyLog">> System Online. 263 Simulations imported from Master Plan.</div>
         </div>
 
         <div id="reviewTab" class="tab-content">
@@ -112,6 +159,7 @@
             <span id="activeGameTitle" style="color:var(--eggman-gold);"></span>
             <button class="btn" onclick="closeGame()">Exit Sim</button>
         </div>
+        <div class="loading-msg" id="loadingMsg">Loading simulation...</div>
         <iframe id="gameFrame"></iframe>
     </div>
 
@@ -381,15 +429,23 @@
             { title: "Wordle", desc: "Word guessing puzzle", url: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor@master/games/176.html", image: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor/images/183.jpg" },
             { title: "Monkey Mart", desc: "Store management tycoon", url: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor@master/games/175.html", image: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor/images/184.jpg" },
             { title: "Short Life", desc: "Quick racing challenges", url: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor@master/games/174.html", image: "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/Noahs-Calculus-Tutor/images/185.jpg" }
-            ];
+        ];
 
         function loadGames() {
             const grid = document.getElementById('cardGrid');
             grid.innerHTML = games.map(g => `
-                <div class="card" onclick="launchGame('${g.title}', '${g.url}')">
-                    <img src="${g.image}" alt="${g.title}">
+                <div class="card">
+                    <img src="${g.image}" alt="${g.title}" onerror="this.src='https://via.placeholder.com/260x140/1a1a1a/c27c15?text=No+Image'">
                     <h3>${g.title}</h3>
                     <p>${g.desc}</p>
+                    <div class="play-options">
+                        <button class="play-btn" onclick="launchGameIframe('${g.title}', '${g.url}'); event.stopPropagation();">
+                            <i class="fas fa-play"></i> Play Here
+                        </button>
+                        <button class="play-btn" onclick="launchGameNewTab('${g.url}'); event.stopPropagation();">
+                            <i class="fas fa-external-link-alt"></i> New Tab
+                        </button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -411,11 +467,29 @@
             }
         }
 
-        function launchGame(title, url) {
+        function launchGameIframe(title, url) {
             document.getElementById('activeGameTitle').innerText = title;
-            document.getElementById('gameFrame').src = url;
+            document.getElementById('loadingMsg').style.display = 'block';
             document.getElementById('game-overlay').style.display = 'block';
+            
+            const iframe = document.getElementById('gameFrame');
+            iframe.src = url;
+            
+            // Hide loading message after iframe loads or after 3 seconds
+            iframe.onload = function() {
+                document.getElementById('loadingMsg').style.display = 'none';
+            };
+            
+            setTimeout(() => {
+                document.getElementById('loadingMsg').style.display = 'none';
+            }, 3000);
+            
             addLog("Simulation Initialized: " + title);
+        }
+
+        function launchGameNewTab(url) {
+            window.open(url, '_blank');
+            addLog("Simulation opened in new tab");
         }
 
         function closeGame() {
