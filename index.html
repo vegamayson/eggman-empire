@@ -43,48 +43,12 @@
         .card {
             background: #1e1e1e; border-radius: 12px; padding: 15px;
             border: 1px solid #333; transition: 0.3s; cursor: pointer;
-            text-align: center; position: relative;
+            text-align: center;
         }
         .card:hover { border-color: var(--eggman-red); transform: translateY(-5px); box-shadow: 0 0 15px var(--eggman-red); }
         .card img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444; }
         .card h3 { font-size: 1rem; margin-bottom: 8px; color: var(--eggman-gold); }
         .card p { color: #888; font-size: 0.8rem; line-height: 1.3; height: 35px; overflow: hidden; }
-        
-        .play-options {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.95);
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid var(--eggman-red);
-            z-index: 100;
-            min-width: 200px;
-        }
-        
-        .card:hover .play-options { display: block; }
-        
-        .play-btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            background: var(--eggman-red);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-        }
-        
-        .play-btn:hover {
-            background: #ff0000;
-            box-shadow: 0 0 10px var(--eggman-red);
-        }
 
         /* --- TABS --- */
         .nav-tabs { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
@@ -116,6 +80,7 @@
             color: var(--eggman-gold);
             font-size: 1.2rem;
             text-align: center;
+            z-index: 10;
         }
     </style>
 </head>
@@ -136,8 +101,7 @@
             <button class="btn" onclick="location.reload()">Logout</button>
         </div>
 
-        <div class="grid" id="cardGrid">
-            </div>
+        <div class="grid" id="cardGrid"></div>
 
         <div class="nav-tabs">
             <div class="nav-tab active" onclick="openTab(event, 'historyTab')">Mission Log</div>
@@ -160,7 +124,7 @@
             <button class="btn" onclick="closeGame()">Exit Sim</button>
         </div>
         <div class="loading-msg" id="loadingMsg">Loading simulation...</div>
-        <iframe id="gameFrame"></iframe>
+        <iframe id="gameFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups"></iframe>
     </div>
 
     <script>
@@ -434,13 +398,10 @@
         function loadGames() {
             const grid = document.getElementById('cardGrid');
             grid.innerHTML = games.map(g => `
-                <div class="card" onclick="window.open('${g.url}', '_blank'); addLog('Launched: ${g.title}');">
+                <div class="card" onclick="launchGame('${g.title}', '${g.url}')">
                     <img src="${g.image}" alt="${g.title}" onerror="this.src='https://via.placeholder.com/260x140/1a1a1a/c27c15?text=No+Image'">
                     <h3>${g.title}</h3>
                     <p>${g.desc}</p>
-                    <div style="margin-top: 10px; color: var(--eggman-red); font-size: 0.85rem;">
-                        <i class="fas fa-play-circle"></i> Click to Play
-                    </div>
                 </div>
             `).join('');
         }
@@ -462,34 +423,42 @@
             }
         }
 
-        function launchGameIframe(title, url) {
+        async function launchGame(title, url) {
             document.getElementById('activeGameTitle').innerText = title;
             document.getElementById('loadingMsg').style.display = 'block';
             document.getElementById('game-overlay').style.display = 'block';
             
             const iframe = document.getElementById('gameFrame');
-            iframe.src = url;
             
-            // Hide loading message after iframe loads or after 3 seconds
-            iframe.onload = function() {
-                document.getElementById('loadingMsg').style.display = 'none';
-            };
-            
-            setTimeout(() => {
-                document.getElementById('loadingMsg').style.display = 'none';
-            }, 3000);
-            
-            addLog("Simulation Initialized: " + title);
-        }
-
-        function launchGameNewTab(url) {
-            window.open(url, '_blank');
-            addLog("Simulation opened in new tab");
+            try {
+                // Fetch the game HTML content
+                const response = await fetch(url);
+                const htmlContent = await response.text();
+                
+                // Use srcdoc to inject the content directly
+                iframe.srcdoc = htmlContent;
+                
+                // Hide loading message after a delay
+                setTimeout(() => {
+                    document.getElementById('loadingMsg').style.display = 'none';
+                }, 2000);
+                
+                addLog("Simulation Initialized: " + title);
+            } catch (error) {
+                // Fallback to regular src if fetch fails
+                iframe.src = url;
+                setTimeout(() => {
+                    document.getElementById('loadingMsg').style.display = 'none';
+                }, 2000);
+                addLog("Simulation Initialized: " + title);
+            }
         }
 
         function closeGame() {
             document.getElementById('game-overlay').style.display = 'none';
-            document.getElementById('gameFrame').src = "";
+            const iframe = document.getElementById('gameFrame');
+            iframe.srcdoc = "";
+            iframe.src = "";
             addLog("Simulation Offline.");
         }
 
